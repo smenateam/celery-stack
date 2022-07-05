@@ -1,0 +1,50 @@
+version: "3"
+
+services:
+  app: &app-service
+    build: ./app
+    container_name: celery-stack-app-1
+    depends_on:
+      - redis
+    environment:
+      CELERY_BROKER_URL: "redis://celery-stack-redis:6379/0"
+      LISTEN_PORT: "8080"
+      LOG_LEVEL: "info"
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  worker-1: &worker-service
+    build: ./app
+    container_name: celery-stack-worker-1
+    depends_on:
+      - redis
+    working_dir: /app/app
+    entrypoint: celery -A tasks.celery_app worker
+    environment:
+      CELERY_BROKER_URL: "redis://celery-stack-redis:6379/0"
+
+  worker-2:
+    # Using YAML anchors for inheritance
+    << : *worker-service
+    container_name: celery-stack-worker-2
+
+  flower:
+    << : *worker-service
+    container_name: celery-stack-flower
+    entrypoint: "celery -A tasks.celery_app flower"
+    ports:
+      - "127.0.0.1:8081:5555"
+
+  redis:
+    image: redis:latest
+    container_name: celery-stack-redis
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  prometheus:
+    image: prom/prometheus
+    container_name: celery-stack-prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
