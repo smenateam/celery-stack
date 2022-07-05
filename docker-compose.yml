@@ -1,7 +1,7 @@
 version: "3"
 
 services:
-  app: &app-service
+  app:
     build: ./app
     container_name: celery-stack-app-1
     depends_on:
@@ -38,8 +38,6 @@ services:
   redis:
     image: redis:latest
     container_name: celery-stack-redis
-    ports:
-      - "127.0.0.1:6379:6379"
 
   prometheus:
     image: prom/prometheus
